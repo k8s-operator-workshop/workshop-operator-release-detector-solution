@@ -3,6 +3,8 @@
 
 ## GitPod integration
 
+Before open the project in Gitpod make sure to have set your `K8S_CTK` variable with the base 64 encoded version of your Kubernetes config file (`config-k3s00X`) file: `cat config-k3s00X | base64`.
+
 To open the workspace, simply click on the *Open in Gitpod* button, or use [this link](https://gitpod.io/#https://github.com/k8s-operator-workshop/workshop-operator-release-detector).
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/k8s-operator-workshop/workshop-operator-release-detector)
@@ -12,15 +14,10 @@ To open the workspace, simply click on the *Open in Gitpod* button, or use [this
 
 ℹ️ The complete source of the workshop can be found in the [workshop-operator-release-detector-solution](https://github.com/k8s-operator-workshop/workshop-operator-release-detector-solution) repository ℹ️
 
-### Init your workspace
-
-  - add a `K8S_CTX` variable with the Kubernetes configuration in Gitpod
-  - create your namespace in the Kubernetes' cluster **TODO modop**
 
 ### Init the project
 
-  - create the project using the operator-sdk CLI: `operator-sdk init --plugins quarkus --domain <username>.operator.workshop.com --project-name workshop-operator-release-detector`, for example `operator-sdk init --plugins quarkus --domain wilda.operator.workshop.com --project-name workshop-operator-release-detector`
-  - the following tree structure must be created:
+  - create the project using the operator-sdk CLI: `operator-sdk init --plugins quarkus --domain operator.workshop.com --project-name workshop-operator-release-detector`
   - the following tree structure must be created:
 ```bash
 .
@@ -43,6 +40,20 @@ To open the workspace, simply click on the *Open in Gitpod* button, or use [this
   remove the following dependency in the `pom.xml`:
 ```xml
 quarkus-operator-sdk-csv-generator
+```
+  - add these dependencies in `pom.xml` for k3s compatibility:
+```xml
+    <!-- Mandatory for k3s : see https://github.com/fabric8io/kubernetes-client/issues/1796 -->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-ext-jdk15on</artifactId>
+      <version>1.69</version>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+      <version>1.69</version>
+    </dependency>
 ```
   - test the compilation: `mvn clean compile`
   - launch Quarkus in _dev mode_: `mvn quarkus:dev`:
@@ -82,13 +93,13 @@ src
 │       └── resources
 │           └── application.properties
 ```
-  - check the generated CRD in `./target/kubernetes/releasedetectors.<username>.operator.workshop.com-v1.yml`, for example `./target/kubernetes/releasedetectors.wilda.operator.workshop.com-v1.yml`
-  - check that the CRD is generated in the Kubernetes' cluster: `kubectl get crds releasedetectors.<username>.operator.workshop.com`, for example `kubectl get crds releasedetectors.wilda.operator.workshop.com`
+  - check the generated CRD in `./target/kubernetes/releasedetectors.operator.workshop.com-v1.yml`, for example `./target/kubernetes/releasedetectors.wilda.operator.workshop.com-v1.yml`
+  - check that the CRD is generated in the Kubernetes' cluster: `kubectl get crds releasedetectors.operator.workshop.com`
 ```bash
-$ kubectl get crds releasedetectors.wilda.operator.workshop.com
+$ kubectl get crds releasedetectors.operator.workshop.com
 
 NAME                                           CREATED AT
-releasedetectors.wilda.operator.workshop.com   2022-09-16T13:31:23Z
+releasedetectors.operator.workshop.com   2022-09-16T13:31:23Z
 ```
 
 ### Release detection
@@ -107,7 +118,7 @@ releasedetectors.wilda.operator.workshop.com   2022-09-16T13:31:23Z
   <artifactId>quarkus-rest-client-jackson</artifactId>
 </dependency>
 ```
-  - create the class `GitHubRelease.java` in `src/main/java/com/workshop/operator/<username>`, for example `src/main/java/com/workshop/operator/wilda`:
+  - create the class `GitHubRelease.java` in `src/main/java/com/workshop/operator/`:
 ```java
 public class GitHubRelease {
 
@@ -131,7 +142,7 @@ public class GitHubRelease {
   }
 }
 ```
-  - create the interface `GHService.java` in `src/main/java/com/workshop/operator/<username>/util`, for example `src/main/java/com/workshop/operator/wilda/util`:
+  - create the interface `GHService.java` in `src/main/java/com/workshop/operator/util`:
 ```java
 @Path("/repos")
 @RegisterRestClient
@@ -146,27 +157,14 @@ public interface GHService {
 ```properties
 quarkus.container-image.build=true
 #quarkus.container-image.group=
-quarkus.container-image.name=java-operator-samples-operator
-# set to true to automatically apply CRDs to the cluster when they get regenerated
-quarkus.operator-sdk.crd.apply=false
-# set to true to automatically generate CSV from your code
-quarkus.operator-sdk.generate-csv=false
-# GH Service parameter
-quarkus.rest-client."com.workshop.operator.<username>.util.GHService".url=https://api.github.com 
-quarkus.rest-client."com.workshop.operator.<username>.util.GHService".scope=javax.inject.Singleton 
-```
-for example:
-```properties
-quarkus.container-image.build=true
-#quarkus.container-image.group=
 quarkus.container-image.name=workshop-operator-release-detector-operator
 # set to true to automatically apply CRDs to the cluster when they get regenerated
 quarkus.operator-sdk.crd.apply=false
 # set to true to automatically generate CSV from your code
 quarkus.operator-sdk.generate-csv=false
 # GH Service parameter
-quarkus.rest-client."com.workshop.operator.wilda.util.GHService".url=https://api.github.com 
-quarkus.rest-client."com.workshop.operator.wilda.util.GHService".scope=javax.inject.Singleton 
+quarkus.rest-client."com.workshop.operator.util.GHService".url=https://api.github.com 
+quarkus.rest-client."com.workshop.operator.util.GHService".scope=javax.inject.Singleton 
 ```
   - update the class `ReleaseDetectorSpec.java` as following:
 ```java
@@ -308,25 +306,16 @@ INFO  [com.wor.ope.wil.ReleaseDetectorReconciler] (Quarkus Main Thread) 🚫 No 
 ```
 - create a test CR `src/test/resources/cr-test-gh-release-watch.yml`:
 ```yaml
-apiVersion: "<username>.operator.workshop.com/v1"
+apiVersion: "operator.workshop.com/v1"
 kind: ReleaseDetector
 metadata:
   name: check-quarkus
 spec:
-  organisation: <GH username>
-  repository: hello-world-from-quarkus-workshop
+  organisation: k8s-operator-workshop
+  repository: hello-world-from-quarkus-workshop-solution
 ```
-for example:
-```yaml
-apiVersion: "wilda.operator.workshop.com/v1"
-kind: ReleaseDetector
-metadata:
-  name: check-quarkus
-spec:
-  organisation: philippart-s
-  repository: hello-world-from-quarkus-workshop
-```
-  - create the test CR on the cluster: `kubectl apply -f ./src/test/resources/cr-test-gh-release-watch.yml -n <user namespace>`, for example `kubectl apply -f ./src/test/resources/cr-test-gh-release-watch.yml -n wilda-workshop`
+  - create the namespace `test-operator-release-detector`: `kubectl create ns test-operator-release-detector`
+  - create the test CR on the cluster: `kubectl apply -f ./src/test/resources/cr-test-gh-release-watch.yml -n test-operator-release-detector`
   - in the operator logs you should see:
 ```bash
 INFO  [com.wor.ope.wil.ReleaseDetectorReconciler] (Timer-9) 🚫 No resource created, nothing to do.
@@ -337,7 +326,7 @@ INFO  [com.wor.ope.wil.ReleaseDetectorReconciler] (Timer-9) 🚀 Fetch resources
 INFO  [com.wor.ope.wil.ReleaseDetectorReconciler] (Timer-9) 🐙 Get the last release version of repository philippart-s in organisation hello-world-from-quarkus-workshop.
 INFO  [com.wor.ope.wil.ReleaseDetectorReconciler] (Timer-9) 🏷  Last release is 1.0.0
 ```
-  - delete the CR: `kubectl delete releasedetectors.<username>.operator.workshop.com check-quarkus -n <username>-workshop`, for example: `kubectl delete releasedetectors.wilda.operator.workshop.com check-quarkus -n wilda-workshop`
+  - delete the CR: `kubectl delete releasedetectors.operator.workshop.com check-quarkus -n test-operator-release-detector`
   - in the operator logs you should see:
 ```bash
 INFO  [com.wor.ope.wil.ReleaseDetectorReconciler] (EventHandler-releasedetectorreconciler) 🗑 Undeploy the application
@@ -347,7 +336,7 @@ INFO  [com.wor.ope.wil.ReleaseDetectorReconciler] (Timer-9) 🚫 No resource cre
 
 ## Deploy application
 
-  - update the class `ReleaseDetectorReconciler.java` as following (be carful to replace `<username>` string by your username, for example `wilda`):
+  - update the class `ReleaseDetectorReconciler.java`:
 ```java
 public class ReleaseDetectorReconciler implements Reconciler<ReleaseDetector>,
     Cleaner<ReleaseDetector>, EventSourceInitializer<ReleaseDetector> {
@@ -474,7 +463,7 @@ public class ReleaseDetectorReconciler implements Reconciler<ReleaseDetector>,
         .withNewSpec()
           .addNewContainer()
             .withName("quarkus")
-            .withImage("56hkk1xk.gra7.container-registry.ovh.net/workshop/<username>/" + repoName + ":" + currentRelease)
+            .withImage("56hkk1xk.gra7.container-registry.ovh.net/workshop/wilda/" + repoName + ":" + currentRelease)
             .addNewPort()
               .withContainerPort(80)
             .endPort()
@@ -532,7 +521,7 @@ public class ReleaseDetectorReconciler implements Reconciler<ReleaseDetector>,
   }  
 }
 ```
-  - create the test CR on the cluster: `kubectl apply -f ./src/test/resources/cr-test-gh-release-watch.yml -n <user namespace>`, for example `kubectl apply -f ./src/test/resources/cr-test-gh-release-watch.yml -n wilda-workshop`
+  - create the test CR on the cluster: `kubectl apply -f ./src/test/resources/cr-test-gh-release-watch.yml -n test-operator-release-detector`
   - in the operator logs you should see:
 ```bash2022-09-16 14:55:59,424 INFO  [com.wor.ope.wil.ReleaseDetectorReconciler] (Timer-17) ⚡️ Polling data !
 2022-09-16 14:55:59,424 INFO  [com.wor.ope.wil.ReleaseDetectorReconciler] (Timer-17) 🚀 Fetch resources !
@@ -591,7 +580,7 @@ spec:
     app: "quarkus"
   type: "NodePort"
 ```
-  - check that the application is deployed: `kubectl get pods,svc -n <user>-workshop`, for example `kubectl get pods,svc -n wilda-workshop`:
+  - check that the application is deployed: `kubectl get pods,svc -n test-operator-release-detector`:
 ```bash
 kubectl get pods,svc -n wilda-workshop
 NAME                                      READY   STATUS    RESTARTS   AGE
@@ -606,7 +595,7 @@ $ curl http://<cluster adress>:30080/hello
 
 👋  Hello, World ! 🌍
 ```
-  - delete the CR: `kubectl delete releasedetectors.<username>.operator.workshop.com check-quarkus -n <username>-workshop`, for example: `kubectl delete releasedetectors.wilda.operator.workshop.com check-quarkus -n wilda-workshop`
+  - delete the CR: `kubectl delete releasedetectors.operator.workshop.com check-quarkus -n test-operator-release-detector`,
 
 ## 🐳  Packaging & deployment to K8s
  - stop the Quarkus dev mode
@@ -614,17 +603,17 @@ $ curl http://<cluster adress>:30080/hello
 ```properties
 # Image options
 quarkus.container-image.build=true
-quarkus.container-image.group=<registry name>/workshop/<username>
+quarkus.container-image.group=56hkk1xk.gra7.container-registry.ovh.net/workshop/<username>
 quarkus.container-image.name=workshop-operator-release-detector-operator
 # set to true to automatically apply CRDs to the cluster when they get regenerated
 quarkus.operator-sdk.crd.apply=false
 # set to true to automatically generate CSV from your code
 quarkus.operator-sdk.generate-csv=false
 # GH Service parameter
-quarkus.rest-client."com.workshop.operator.<username>.util.GHService".url=https://api.github.com 
-quarkus.rest-client."com.workshop.operator.<username>.util.GHService".scope=javax.inject.Singleton 
+quarkus.rest-client."com.workshop.operator.util.GHService".url=https://api.github.com 
+quarkus.rest-client."com.workshop.operator.util.GHService".scope=javax.inject.Singleton 
 # Kubernetes options
-quarkus.kubernetes.namespace=<username>-workshop
+quarkus.kubernetes.namespace=workshop-operator-release-detector-operator
 ```
 for example:
 ```properties
@@ -637,10 +626,10 @@ quarkus.operator-sdk.crd.apply=false
 # set to true to automatically generate CSV from your code
 quarkus.operator-sdk.generate-csv=false
 # GH Service parameter
-quarkus.rest-client."com.workshop.operator.wilda.util.GHService".url=https://api.github.com 
-quarkus.rest-client."com.workshop.operator.wilda.util.GHService".scope=javax.inject.Singleton 
+quarkus.rest-client."com.workshop.operator.util.GHService".url=https://api.github.com 
+quarkus.rest-client."com.workshop.operator.util.GHService".scope=javax.inject.Singleton 
 # Kubernetes options
-quarkus.kubernetes.namespace=wilda-workshop
+quarkus.kubernetes.namespace=workshop-operator-release-detector-operator
 ```
   - add `src/main/kubernetes/kubernetes.yml` file with the following content:
 ```yaml
@@ -648,7 +637,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
     name: service-deployment-cluster-role
-    namespace: java-operator-samples-operator
+    namespace: workshop-operator-release-detector-operator
 rules:
   - apiGroups:
     - ""
@@ -669,35 +658,38 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: service-deployment-cluster-role-binding
-  namespace: java-operator-samples-operator
+  namespace: workshop-operator-release-detector-operator
 roleRef:
   kind: ClusterRole
   apiGroup: rbac.authorization.k8s.io
   name: service-deployment-cluster-role
 subjects:
   - kind: ServiceAccount
-    name: java-operator-samples-operator
-    namespace: java-operator-samples-operator
+    name: workshop-operator-release-detector-operator
+    namespace: workshop-operator-release-detector-operator
 ---
 ```
   - package the application: `mvn clean package`
   - connect the docker client to your registry `docker login <registry url>`, for example: `docker login 56hkk1xk.gra7.container-registry.ovh.net`
   - push the image previously created: `docker push <registry>/workshop/<username>/workshop-operator-release-detector-operator:0.0.1-SNAPSHOT`, for example `docker push 56hkk1xk.gra7.container-registry.ovh.net/workshop/wilda/workshop-operator-release-detector-operator:0.0.1-SNAPSHOT`
+  - create the namespace `workshop-operator-release-detector-operator`: `kubectl create ns workshop-operator-release-detector-operator`
   - apply the manifest `./target/kubernetes/kubernetes.yml`: `kubectl apply -f ./target/kubernetes/kubernetes.yml` 
-  - check everything is ok: `kubectl get pod -n <username>-workshop`, for example `kubectl get pod -n wilda-workshop`
+  - check everything is ok: `kubectl get pod -n workshop-operator-release-detector-operator`
 ```bash
-$ kubectl get pod -n wilda-workshop
+$ kubectl get pod -n workshop-operator-release-detector-operator
 
 NAME                                                           READY   STATUS    RESTARTS   AGE
-workshop-operator-release-detector-operator-7c7bb4c658-qctns   1/1     Running   0          35s
+workshop-operator-release-detector-operator-6cb48d9c75-2429b   1/1     Running   0          38s
 ```  
-  - test your operator by creating the test CR on the cluster: `kubectl apply -f ./src/test/resources/cr-test-gh-release-watch.yml -n <user namespace>`, for example `kubectl apply -f ./src/test/resources/cr-test-gh-release-watch.yml -n wilda-workshop`
+  - if needed create the namespace `test-operator-release-detector`: `kubectl create ns test-operator-release-detector`
+  - test your operator by creating the test CR on the cluster: `kubectl apply -f ./src/test/resources/cr-test-gh-release-watch.yml -n test-operator-release-detector`
  - test the application:
 ```bash
 $ curl http://<cluster adress>:30080/hello
 
 👋  Hello, World ! 🌍
 ```
-  - delete the CR: `kubectl delete releasedetectors.<username>.operator.workshop.com check-quarkus -n <username>-workshop`, for example: `kubectl delete releasedetectors.wilda.operator.workshop.com check-quarkus -n wilda-workshop`
+  - delete the CR: `kubectl delete releasedetectors.operator.workshop.com check-quarkus -n test-operator-release-detector`
   - delete the operator: `kubectl delete -f ./target/kubernetes/kubernetes.yml`
-  - delete the crd : `kubectl delete crds/releasedetectors.<username>.operator.workshop.com`, for example `kubectl delete crds/releasedetectors.wilda.operator.workshop.com`
+  - delete the crd : `kubectl delete crds/releasedetectors.operator.workshop.com`
+  - delete the namespaces: `kubectl delete ns test-operator-release-detector workshop-operator-release-detector-operator`
