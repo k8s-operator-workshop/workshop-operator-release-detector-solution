@@ -1,0 +1,12 @@
+domain: operator.workshop.com
+layout:
+- quarkus.javaoperatorsdk.io/v1-alpha
+projectName: workshop-operator-release-detector
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: operator.workshop.com
+  kind: ReleaseDetector
+  version: v1
+version: "3"

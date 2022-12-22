@@ -1,0 +1,7 @@
+apiVersion: "operator.workshop.com/v1"
+kind: ReleaseDetector
+metadata:
+  name: check-quarkus
+spec:
+  organisation: k8s-operator-workshop
+  repository:  hello-world-from-quarkus-solution

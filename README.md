@@ -3,7 +3,7 @@
 
 ## GitPod integration
 
-Before open the project in Gitpod make sure to have set your `K8S_CTK` variable with the base 64 encoded version of your Kubernetes config file (`config-k3s00X`) file: `cat config-k3s00X | base64`.
+Before open the project in Gitpod make sure to have set your `K8S_CTX` variable with the base 64 encoded version of your Kubernetes config file (`config-k3s00X`) file: `cat config-k3s00X | base64`.
 
 To open the workspace, simply click on the *Open in Gitpod* button, or use [this link](https://gitpod.io/#https://github.com/k8s-operator-workshop/workshop-operator-release-detector).
 
@@ -31,15 +31,6 @@ To open the workspace, simply click on the *Open in Gitpod* button, or use [this
         ├── java
         └── resources
             └── application.properties
-```
-  - change the JOSDK Quarkus extension version and the Quarkus version in the `pom.xml`:
-```xml
-<quarkus-sdk.version>4.0.1</quarkus-sdk.version>
-<quarkus.version>2.12.2.Final</quarkus.version>
-```
-  remove the following dependency in the `pom.xml`:
-```xml
-quarkus-operator-sdk-csv-generator
 ```
   - add these dependencies in `pom.xml` for k3s compatibility:
 ```xml
@@ -85,11 +76,11 @@ src
 │       │   └── com
 │       │       └── workshop
 │       │           └── operator
-│       │               └── <username>
-│       │                   ├── ReleaseDetector.java
-│       │                   ├── ReleaseDetectorReconciler.java
-│       │                   ├── ReleaseDetectorSpec.java
-│       │                   └── ReleaseDetectorStatus.java
+│       │               |
+│       │               ├── ReleaseDetector.java
+│       │               ├── ReleaseDetectorReconciler.java
+│       │               ├── ReleaseDetectorSpec.java
+│       │               └── ReleaseDetectorStatus.java
 │       └── resources
 │           └── application.properties
 ```
@@ -312,7 +303,7 @@ metadata:
   name: check-quarkus
 spec:
   organisation: k8s-operator-workshop
-  repository: hello-world-from-quarkus-workshop-solution
+  repository:  hello-world-from-quarkus-solution
 ```
   - create the namespace `test-operator-release-detector`: `kubectl create ns test-operator-release-detector`
   - create the test CR on the cluster: `kubectl apply -f ./src/test/resources/cr-test-gh-release-watch.yml -n test-operator-release-detector`
