@@ -77,11 +77,11 @@ src
 │       │   └── com
 │       │       └── workshop
 │       │           └── operator
-│       │               └── <username>
-│       │                   ├── ReleaseDetector.java
-│       │                   ├── ReleaseDetectorReconciler.java
-│       │                   ├── ReleaseDetectorSpec.java
-│       │                   └── ReleaseDetectorStatus.java
+│       │               |
+│       │               ├── ReleaseDetector.java
+│       │               ├── ReleaseDetectorReconciler.java
+│       │               ├── ReleaseDetectorSpec.java
+│       │               └── ReleaseDetectorStatus.java
 │       └── resources
 │           └── application.properties
 ```
@@ -304,7 +304,7 @@ metadata:
   name: check-quarkus
 spec:
   organisation: k8s-operator-workshop
-  repository: hello-world-from-quarkus-workshop-solution
+  repository:  hello-world-from-quarkus-solution
 ```
   - create the namespace `test-operator-release-detector`: `kubectl create ns test-operator-release-detector`
   - create the test CR on the cluster: `kubectl apply -f ./src/test/resources/cr-test-gh-release-watch.yml -n test-operator-release-detector`
