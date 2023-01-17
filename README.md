@@ -3,12 +3,13 @@
 
 ## GitPod integration
 
-Before open the project in Gitpod make sure to have set your `K8S_CTK` variable with the base 64 encoded version of your Kubernetes config file (`config-k3s00X`) file: `cat config-k3s00X | base64`.
-
 To open the workspace, simply click on the *Open in Gitpod* button, or use [this link](https://gitpod.io/#https://github.com/k8s-operator-workshop/workshop-operator-release-detector).
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/k8s-operator-workshop/workshop-operator-release-detector)
 
+## Configuration
+
+Follows the steps describe in the [attendees-instructions.md](https://github.com/k8s-operator-workshop/workshop-instructions/blob/main/attendees-instructions.md) to set the `KUBECONFIG` environment variable.
 
 # Workshop steps
 
@@ -31,15 +32,6 @@ To open the workspace, simply click on the *Open in Gitpod* button, or use [this
         ├── java
         └── resources
             └── application.properties
-```
-  - change the JOSDK Quarkus extension version and the Quarkus version in the `pom.xml`:
-```xml
-<quarkus-sdk.version>4.0.1</quarkus-sdk.version>
-<quarkus.version>2.12.2.Final</quarkus.version>
-```
-  remove the following dependency in the `pom.xml`:
-```xml
-quarkus-operator-sdk-csv-generator
 ```
   - add these dependencies in `pom.xml` for k3s compatibility:
 ```xml
@@ -104,7 +96,7 @@ releasedetectors.operator.workshop.com   2022-09-16T13:31:23Z
 
 ### Release detection
 
-> ⚠️ At this point you must have executed the exercice [workshop-operator-hello-world](https://github.com/k8s-operator-workshop/workshop-operator-hello-world) ⚠️
+> ⚠️ At this point you must have executed the exercise [workshop-operator-hello-world](https://github.com/k8s-operator-workshop/workshop-operator-hello-world) ⚠️
 
   - add the following dependencies in the pom.xml:
 ```xml
